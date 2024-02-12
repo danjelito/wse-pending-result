@@ -7,11 +7,9 @@ import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 
-today = "2024-02-05"
+today = "2024-02-12" # note: used to get the folder containing pending result
 month = "2024-01"  # note: used to retrieve sheet from coco trainer data
-load_dotenv()
-
-
+load_dotenv() # load secret variable
 
 
 if __name__ == "__main__":
@@ -33,9 +31,7 @@ if __name__ == "__main__":
     df_jkt3 = df_clean.loc[df_clean["Teacher Area"] == "JKT 3"]
     df_sby = df_clean.loc[df_clean["Teacher Area"] == "SBY"]
     df_bdg = df_clean.loc[df_clean["Teacher Area"] == "BDG"]
-    df_onl = df_clean.loc[
-        df_clean["Teacher Area"].isin(["Online", "Shared Account", "Ooolab"])
-    ]
+    df_onl = df_clean.loc[df_clean["Teacher Area"].isin(["Online", "Shared Account", "Ooolab"])]
     df_oth = df_clean.loc[df_clean["Teacher Area"] == "Other"]
 
     # assert that no rows are missed
@@ -62,6 +58,5 @@ if __name__ == "__main__":
     }
     for sheet_name, df in to_save.items():
         df.to_excel(writer, sheet_name=sheet_name, index=True)
-    
-    print("file saved")
     writer.close()
+    print("file saved")

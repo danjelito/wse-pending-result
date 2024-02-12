@@ -143,9 +143,9 @@ def count_pending_result(df: pd.DataFrame, today: str) -> pd.DataFrame:
         # fill na with 0
         .fillna(0)
         # note: do not display trainer if the last 3 months pending results is 0
-        .loc[lambda df_: np.sum(df_.iloc[:, -3:], axis=1) > 0]
         # clean col names and all
         .droplevel(0, axis=1)
+        # .sort_index(axis="columns", ascending=False)
         .rename(columns=lambda c: c.strftime("%b %Y"))
         .rename_axis(["Teacher Area", "Teacher"])
         .rename_axis([""], axis=1)
