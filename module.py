@@ -1,6 +1,8 @@
-import pandas as pd
-from pathlib import Path
 import os
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
 
 
 def load_single_pending_df(path_: str) -> pd.DataFrame:
@@ -78,7 +80,9 @@ def clean_pending_df(dfs: list, date_exported: str, month: str) -> pd.DataFrame:
         .dropna(how="all", axis=0)
         .dropna(how="all", axis=1)
         .assign(
-            teacher=lambda df_: clean_trainer_name(df_, "teacher"),  # clean teacher name
+            teacher=lambda df_: clean_trainer_name(
+                df_, "teacher"
+            ),  # clean teacher name
             date=lambda df_: pd.to_datetime(df_["date"]),  # get the clean date
             date_exported=pd.to_datetime(date_exported),  # data exported date
         )
@@ -118,3 +122,31 @@ def clean_pending_df(dfs: list, date_exported: str, month: str) -> pd.DataFrame:
     )
 
     return df_clean
+
+
+def count_pending_result(df: pd.DataFrame, today: str) -> pd.DataFrame:
+    """Get summary of pending result in the last 365 days,
+    grouped by area and teacher, pivoted per month.
+    """
+
+    return (
+        df
+        # filter only pending result for the past 365 days
+        .loc[lambda df_: (pd.to_datetime(today) - df_["date"]).dt.days <= 365]
+        # group
+        .groupby(["teacher_area", "teacher", pd.Grouper(key="date", freq="1M")])
+        .agg(num_session_with_pending_res=("teacher", "count"))
+        .reset_index()
+        # pivot
+        .pivot(index=["teacher_area", "teacher"], columns="date")
+        .sort_index(axis="columns", ascending=False)
+        # fill na with 0
+        .fillna(0)
+        # note: do not display trainer if the last 3 months pending results is 0
+        .loc[lambda df_: np.sum(df_.iloc[:, -3:], axis=1) > 0]
+        # clean col names and all
+        .droplevel(0, axis=1)
+        .rename(columns=lambda c: c.strftime("%b %Y"))
+        .rename_axis(["Teacher Area", "Teacher"])
+        .rename_axis([""], axis=1)
+    )
