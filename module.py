@@ -1,25 +1,24 @@
 import os
+import re
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 
-def load_single_pending_df(path_: str) -> pd.DataFrame:
+def load_single_pending_df(path: str) -> pd.DataFrame:
     """Load pending result DF."""
 
-    df = pd.read_excel(path_, skiprows=1, engine="xlrd")
+    df = pd.read_excel(path, skiprows=1, engine="xlrd")
     return df
 
 
-def load_all_pending_dfs(path_: str) -> list[pd.DataFrame]:
+def load_all_pending_dfs(dirpath: str) -> list[pd.DataFrame]:
     """Load all pending result DFs, return them as a list of DFs."""
 
-    offline_classroom = load_single_pending_df(Path(path_, "Pending Results.xls"))
-    offline_other = load_single_pending_df(Path(path_, "Pending Results (1).xls"))
-    online_classroom = load_single_pending_df(Path(path_, "Pending Results (2).xls"))
-    online_other = load_single_pending_df(Path(path_, "Pending Results (3).xls"))
-    return [offline_classroom, offline_other, online_classroom, online_other]
+    filepaths = [f for f in os.listdir(dirpath) if re.match("Pending", f)]
+    dfs = [load_single_pending_df(Path(dirpath, filepath)) for filepath in filepaths]
+    return dfs
 
 
 def load_trainer_df(month: str) -> pd.DataFrame:
