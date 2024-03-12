@@ -89,7 +89,7 @@ def clean_pending_df(dfs: list, date_exported: str, month: str) -> pd.DataFrame:
         .merge(
             right=load_trainer_df(month),
             left_on="teacher",
-            right_on="teacher",
+            right_on="coco_teacher_name",
             how="left",
         )
         # drop unused cols
