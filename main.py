@@ -22,9 +22,6 @@ if __name__ == "__main__":
     # count pending result per month / create summary
     df_pending = module.count_pending_result(df_clean, today)
 
-    # test
-    test.test_all_teacher_exist_in_coco_trainer_data(df_clean)
-
     # create data per area
     df_clean = df_clean.rename(columns=lambda c: c.replace("_", " ").title())
     df_jkt1 = df_clean.loc[df_clean["Teacher Area"] == "JKT 1"]
@@ -35,10 +32,10 @@ if __name__ == "__main__":
     df_onl = df_clean.loc[df_clean["Teacher Area"].isin(["Online", "Shared Account", "Ooolab"])]
     df_oth = df_clean.loc[df_clean["Teacher Area"] == "Other"]
 
-    # assert that no rows are missed
-    assert len(df_clean) == sum(
-        [len(df) for df in [df_jkt1, df_jkt2, df_jkt3, df_sby, df_bdg, df_onl, df_oth]]
-    )
+    # test
+    test.test_all_teacher_exist_in_coco_trainer_data(df_clean, "Teacher", "Teacher Area")
+    df_area_list = [df_jkt1, df_jkt2, df_jkt3, df_sby, df_bdg, df_onl, df_oth]
+    test.test_len_raw_eq_len_per_area(df_clean, df_area_list)
 
     # save df
     # write each dataframe to a different worksheet.

@@ -11,8 +11,7 @@ def load_single_pending_df(path: str) -> pd.DataFrame:
 
     :param str path: Path to excel file.
     :return pd.DataFrame: DF.
-    """    
-
+    """
     df = pd.read_excel(path, skiprows=1, engine="xlrd")
     return df
 
@@ -21,7 +20,7 @@ def load_all_pending_dfs(dirpath: str) -> list[pd.DataFrame]:
     """Load all pending result DFs, return them as one single DF.
 
     :param str dirpath: Path to folder that contains the excel files.
-    :return list[pd.DataFrame]: List of DF.
+    :return pd.DataFrame: Concatted DF.
     """
     filepaths = [f for f in os.listdir(dirpath) if re.match("Pending", f)]
     dfs = [load_single_pending_df(Path(dirpath, filepath)) for filepath in filepaths]
@@ -29,17 +28,23 @@ def load_all_pending_dfs(dirpath: str) -> list[pd.DataFrame]:
 
 
 def load_trainer_df(month: str) -> pd.DataFrame:
-    """Load trainer DF which details the area of ET."""
+    """Load trainer DF which details the area of ET.
 
+    :param str month: Current month in format YYYY-MM.
+    :return pd.DataFrame: Trainer DF for the current month.
+    """
     path = os.getenv("path_trainer_data")
     df_trainer = pd.read_excel(path, sheet_name=month)
-
     return df_trainer
 
 
 def clean_trainer_name(df: pd.DataFrame, teacher_col: str) -> pd.Series:
-    """Clean teacher's name."""
+    """Clean teacher name in DF column.
 
+    :param pd.DataFrame df: Pending result DF.
+    :param str teacher_col: Name of the teacher column.
+    :return pd.Series: Clean teacher name.
+    """
     teachers = (
         df[teacher_col]
         .str.title()
@@ -64,19 +69,29 @@ def clean_trainer_name(df: pd.DataFrame, teacher_col: str) -> pd.Series:
 
 
 def clean_pending_df(df: pd.DataFrame, date_exported: str, month: str) -> pd.DataFrame:
-    """Clean pending dfs to obtain list of pending results per session."""
+    """Clean pending result DF.
 
+    :param pd.DataFrame df: Raw pending result DF.
+    :param str date_exported: Date of exported, to create column of exported date.
+    :param str month: Current month, for arg to load_trainer_df function.
+    :return pd.DataFrame: Clean pending result DF.
+    """
+
+    col_to_be_dropped_1 = ["Level / Unit", "First Name", "Last Name", "Code", "Service Type",]
+    col_to_be_dropped_2 = ["teacher_working_days","teacher_note_1","teacher_note_2","center name",]
+    col_duplicate_subset = ["Teacher", "Class Type", "Date", "Start Time"]
+    col_order = [
+        "teacher", "date", "start time", "class type", "teacher_position", 
+        "teacher_center", "teacher_area", "date_exported",
+    ]
+    col_for_sorting = ["teacher_area", "teacher_center", "teacher", "date"]
+    
     df_clean = (
-        # concat dfs that is obtained from load_all_pending_dfs
         df
         # drop unused columns
-        .drop(
-            columns=["Level / Unit", "First Name", "Last Name", "Code", "Service Type"]
-        )
+        .drop(columns=col_to_be_dropped_1)
         # drop duplicates based on this subset to get per session
-        .drop_duplicates(
-            subset=["Teacher", "Class Type", "Date", "Start Time"], keep="first"
-        )
+        .drop_duplicates(subset=col_duplicate_subset, keep="first")
         # drop staff appointment
         .loc[lambda df_: df_["Class Type"] != "Staff Appointment"]
         # rename columns
@@ -86,9 +101,7 @@ def clean_pending_df(df: pd.DataFrame, date_exported: str, month: str) -> pd.Dat
         .dropna(how="all", axis=0)
         .dropna(how="all", axis=1)
         .assign(
-            teacher=lambda df_: clean_trainer_name(
-                df_, "teacher"
-            ),  # clean teacher name
+            teacher=lambda df_: clean_trainer_name(df_, "teacher"),  # clean teacher name
             date=lambda df_: pd.to_datetime(df_["date"]),  # get the clean date
             date_exported=pd.to_datetime(date_exported),  # data exported date
         )
@@ -99,31 +112,12 @@ def clean_pending_df(df: pd.DataFrame, date_exported: str, month: str) -> pd.Dat
             right_on="coco_teacher_name",
             how="left",
         )
-        # drop unused cols
-        .drop(
-            columns=[
-                "teacher_working_days",
-                "teacher_note_1",
-                "teacher_note_2",
-                "center name",
-            ]
-        )
+        # drop unused cols again
+        .drop(columns=col_to_be_dropped_2)
         # sort columns
-        .loc[
-            :,
-            [
-                "teacher",
-                "date",
-                "start time",
-                "class type",
-                "teacher_position",
-                "teacher_center",
-                "teacher_area",
-                "date_exported",
-            ],
-        ]
+        .loc[:,col_order]
         # sort rows
-        .sort_values(["teacher_area", "teacher_center", "teacher", "date"])
+        .sort_values(col_for_sorting)
         .reset_index(drop=True)
     )
 
@@ -133,8 +127,11 @@ def clean_pending_df(df: pd.DataFrame, date_exported: str, month: str) -> pd.Dat
 def count_pending_result(df: pd.DataFrame, today: str) -> pd.DataFrame:
     """Get summary of pending result in the last 365 days,
     grouped by area and teacher, pivoted per month.
-    """
 
+    :param pd.DataFrame df: Clean pending result DF from clean_pending_df function.
+    :param str today: Today's date/
+    :return pd.DataFrame: Pivoted pending result DF by area, teacher and month.
+    """
     return (
         df
         # filter only pending result for the past 365 days
