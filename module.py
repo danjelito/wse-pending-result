@@ -1,9 +1,8 @@
 import os
 import re
-from pathlib import Path
 from collections import namedtuple
+from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 
@@ -126,14 +125,21 @@ def clean_pending_df(df: pd.DataFrame, date_exported: str, month: str) -> pd.Dat
     return df_clean
 
 
-def count_pending_result(df: pd.DataFrame, today: str) -> pd.DataFrame:
+def count_pending_result(df: pd.DataFrame, today: str, excluded_et: list = None) -> pd.DataFrame:
     """Get summary of pending result in the last 365 days,
     grouped by area and teacher, pivoted per month.
 
     :param pd.DataFrame df: Clean pending result DF from clean_pending_df function.
-    :param str today: Today's date/
+    :param str today: Today's date.
+    :param list excluded_et: ETs to be exclued from the summary.
     :return pd.DataFrame: Pivoted pending result DF by area, teacher and month.
     """
+    if excluded_et:
+        df = (df
+            .rename(columns=lambda c: c.replace(" ", "_").lower())
+            .loc[lambda df_: ~(df_["teacher"].isin(excluded_et))]
+        )
+
     return (
         df
         .rename(columns=lambda c: c.replace(" ", "_").lower())
@@ -157,6 +163,7 @@ def count_pending_result(df: pd.DataFrame, today: str) -> pd.DataFrame:
         .rename_axis([""], axis=1)
     )
 
+
 def create_pending_df_per_area(df_clean: pd.DataFrame) -> namedtuple:
     """Create pending DF per area.
 
@@ -176,3 +183,37 @@ def create_pending_df_per_area(df_clean: pd.DataFrame) -> namedtuple:
         "AreaDF", ["jkt_1", "jkt_2", "jkt_3", "sby", "bdg", "onl", "oth"]
     )
     return AreaDF(df_jkt1, df_jkt2, df_jkt3, df_sby, df_bdg, df_onl, df_oth)
+
+
+def create_folder_if_not_exist(folder_path: str):
+    """
+    Create the specified folder if it does not exist.
+
+    :param str folder_path: Path of the folder to be created.
+    """
+    folder_path = Path(folder_path)
+
+    if not folder_path.is_dir():
+        folder_path.mkdir(parents=True, exist_ok=True)
+
+
+def save_multiple_dfs(df_dict: dict, filepath: str):
+    """
+    Save multiple DataFrames to an Excel file.
+
+    :param dict df_dict: A dictionary where keys are sheet names and values are DataFrames.
+    :param str filepath: Path to the Excel file.
+    """
+    filepath = Path(filepath)
+    parent = filepath.parent
+    create_folder_if_not_exist(parent)
+
+    if filepath.exists():
+        raise FileExistsError("The file already exists.")
+
+    writer = pd.ExcelWriter(filepath, engine="xlsxwriter")
+
+    for sheet_name, df in df_dict.items():
+        df.to_excel(writer, sheet_name=sheet_name, index=True)
+
+    writer.close()
