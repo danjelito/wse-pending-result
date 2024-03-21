@@ -8,7 +8,7 @@ import pandas as pd
 from dotenv import load_dotenv
 
 
-today = "2024-03-12" # note: used to get the folder containing pending result
+today = "2024-03-18" # note: used to get the folder containing pending result
 month = "2024-02"  # note: used to retrieve sheet from coco trainer data
 load_dotenv() # load secret variable
 
@@ -16,9 +16,9 @@ load_dotenv() # load secret variable
 if __name__ == "__main__":
 
     # load all pending dfs in a folder
-    dfs = module.load_all_pending_dfs(Path("data", today))
+    df = module.load_all_pending_dfs(Path("data", today))
     # clean data
-    df_clean = module.clean_pending_df(dfs, today, month)
+    df_clean = module.clean_pending_df(df, today, month)
     # count pending result per month / create summary
     df_pending = module.count_pending_result(df_clean, today)
 

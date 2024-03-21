@@ -7,18 +7,25 @@ import pandas as pd
 
 
 def load_single_pending_df(path: str) -> pd.DataFrame:
-    """Load pending result DF."""
+    """Load a single pending result DF.
+
+    :param str path: Path to excel file.
+    :return pd.DataFrame: DF.
+    """    
 
     df = pd.read_excel(path, skiprows=1, engine="xlrd")
     return df
 
 
 def load_all_pending_dfs(dirpath: str) -> list[pd.DataFrame]:
-    """Load all pending result DFs, return them as a list of DFs."""
+    """Load all pending result DFs, return them as one single DF.
 
+    :param str dirpath: Path to folder that contains the excel files.
+    :return list[pd.DataFrame]: List of DF.
+    """
     filepaths = [f for f in os.listdir(dirpath) if re.match("Pending", f)]
     dfs = [load_single_pending_df(Path(dirpath, filepath)) for filepath in filepaths]
-    return dfs
+    return pd.concat(dfs)
 
 
 def load_trainer_df(month: str) -> pd.DataFrame:
@@ -56,12 +63,12 @@ def clean_trainer_name(df: pd.DataFrame, teacher_col: str) -> pd.Series:
     return teachers
 
 
-def clean_pending_df(dfs: list, date_exported: str, month: str) -> pd.DataFrame:
+def clean_pending_df(df: pd.DataFrame, date_exported: str, month: str) -> pd.DataFrame:
     """Clean pending dfs to obtain list of pending results per session."""
 
     df_clean = (
         # concat dfs that is obtained from load_all_pending_dfs
-        pd.concat(dfs)
+        df
         # drop unused columns
         .drop(
             columns=["Level / Unit", "First Name", "Last Name", "Code", "Service Type"]
