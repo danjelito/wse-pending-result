@@ -2,15 +2,16 @@ import os
 import module
 import test
 from pathlib import Path
+from collections import namedtuple
 
 import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 
 
-today = "2024-03-18" # note: used to get the folder containing pending result
+today = "2024-03-18"  # note: used to get the folder containing pending result
 month = "2024-02"  # note: used to retrieve sheet from coco trainer data
-load_dotenv() # load secret variable
+load_dotenv()  # load secret variable
 
 
 if __name__ == "__main__":
@@ -19,22 +20,17 @@ if __name__ == "__main__":
     df = module.load_all_pending_dfs(Path("data", today))
     # clean data
     df_clean = module.clean_pending_df(df, today, month)
-    # count pending result per month / create summary
+    # create summary
     df_pending = module.count_pending_result(df_clean, today)
-
-    # create data per area
-    df_clean = df_clean.rename(columns=lambda c: c.replace("_", " ").title())
-    df_jkt1 = df_clean.loc[df_clean["Teacher Area"] == "JKT 1"]
-    df_jkt2 = df_clean.loc[df_clean["Teacher Area"] == "JKT 2"]
-    df_jkt3 = df_clean.loc[df_clean["Teacher Area"] == "JKT 3"]
-    df_sby = df_clean.loc[df_clean["Teacher Area"] == "SBY"]
-    df_bdg = df_clean.loc[df_clean["Teacher Area"] == "BDG"]
-    df_onl = df_clean.loc[df_clean["Teacher Area"].isin(["Online", "Shared Account", "Ooolab"])]
-    df_oth = df_clean.loc[df_clean["Teacher Area"] == "Other"]
+    # create DF per area
+    area_df = module.create_pending_df_per_area(df_clean)
 
     # test
     test.test_all_teacher_exist_in_coco_trainer_data(df_clean, "Teacher", "Teacher Area")
-    df_area_list = [df_jkt1, df_jkt2, df_jkt3, df_sby, df_bdg, df_onl, df_oth]
+    df_area_list = [
+        area_df.jkt_1, area_df.jkt_2, area_df.jkt_3,
+        area_df.sby, area_df.bdg, area_df.onl, area_df.oth
+    ]
     test.test_len_raw_eq_len_per_area(df_clean, df_area_list)
 
     # save df
@@ -46,13 +42,13 @@ if __name__ == "__main__":
     to_save = {
         "Summary": df_pending,
         "All Area": df_clean,
-        "JKT 1": df_jkt1,
-        "JKT 2": df_jkt2,
-        "JKT 3": df_jkt3,
-        "SBY": df_sby,
-        "BDG": df_bdg,
-        "Online": df_onl,
-        "Other": df_oth,
+        "JKT 1": area_df.jkt_1,
+        "JKT 2": area_df.jkt_2,
+        "JKT 3": area_df.jkt_3,
+        "SBY": area_df.sby,
+        "BDG": area_df.bdg,
+        "Online": area_df.onl,
+        "Other": area_df.oth,
     }
     for sheet_name, df in to_save.items():
         df.to_excel(writer, sheet_name=sheet_name, index=True)

@@ -1,6 +1,7 @@
 import os
 import re
 from pathlib import Path
+from collections import namedtuple
 
 import numpy as np
 import pandas as pd
@@ -119,6 +120,7 @@ def clean_pending_df(df: pd.DataFrame, date_exported: str, month: str) -> pd.Dat
         # sort rows
         .sort_values(col_for_sorting)
         .reset_index(drop=True)
+        .rename(columns=lambda c: c.replace("_", " ").title())
     )
 
     return df_clean
@@ -134,6 +136,7 @@ def count_pending_result(df: pd.DataFrame, today: str) -> pd.DataFrame:
     """
     return (
         df
+        .rename(columns=lambda c: c.replace(" ", "_").lower())
         # filter only pending result for the past 365 days
         .loc[lambda df_: (pd.to_datetime(today) - df_["date"]).dt.days <= 365]
         # group
@@ -153,3 +156,23 @@ def count_pending_result(df: pd.DataFrame, today: str) -> pd.DataFrame:
         .rename_axis(["Teacher Area", "Teacher"])
         .rename_axis([""], axis=1)
     )
+
+def create_pending_df_per_area(df_clean: pd.DataFrame) -> namedtuple:
+    """Create pending DF per area.
+
+    :param pd.DataFrame df_clean: Clean pending result df from clean_pending_df function.
+    :return namedtuple: namedtuple for each area DF.
+    """
+    df_jkt1 = df_clean.loc[df_clean["Teacher Area"] == "JKT 1"]
+    df_jkt2 = df_clean.loc[df_clean["Teacher Area"] == "JKT 2"]
+    df_jkt3 = df_clean.loc[df_clean["Teacher Area"] == "JKT 3"]
+    df_sby = df_clean.loc[df_clean["Teacher Area"] == "SBY"]
+    df_bdg = df_clean.loc[df_clean["Teacher Area"] == "BDG"]
+    df_onl = df_clean.loc[
+        df_clean["Teacher Area"].isin(["Online", "Shared Account", "Ooolab"])
+    ]
+    df_oth = df_clean.loc[df_clean["Teacher Area"] == "Other"]
+    AreaDF = namedtuple(
+        "AreaDF", ["jkt_1", "jkt_2", "jkt_3", "sby", "bdg", "onl", "oth"]
+    )
+    return AreaDF(df_jkt1, df_jkt2, df_jkt3, df_sby, df_bdg, df_onl, df_oth)
