@@ -24,7 +24,7 @@ excluded_et = [
 ]
 
 
-def main():
+if __name__ == "__main__":
     # load all pending dfs in a folder
     df = module.load_all_pending_dfs(Path("data", today))
     # clean data
@@ -57,7 +57,4 @@ def main():
     }
     module.save_multiple_dfs(df_dict=to_save, filepath=filepath)
     print("file saved")
-
-
-if __name__ == "__main__":
-    main()
+    

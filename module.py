@@ -85,6 +85,10 @@ def clean_pending_df(df: pd.DataFrame, date_exported: str, month: str) -> pd.Dat
         "teacher_center", "teacher_area", "date_exported",
     ]
     col_for_sorting = ["teacher_area", "teacher_center", "teacher", "date"]
+    # class to manually exclude from the data and report because already closed
+    classes_to_exclude = [
+        "Jurado Michael John 04 Feb 2024 16:00 Complementary Class",
+    ]
     
     df_clean = (
         df
@@ -121,7 +125,20 @@ def clean_pending_df(df: pd.DataFrame, date_exported: str, month: str) -> pd.Dat
         .reset_index(drop=True)
         .rename(columns=lambda c: c.replace("_", " ").title())
     )
-
+    # ! manually exlcude class
+    # sometimes there are classes that have been closed by still appears
+    def _make_class_identifier(df_clean):
+        """A functio to make class identifier to manually exclude class."""
+        classes = (
+            df_clean["Teacher"] + " " 
+            + df_clean["Date"].dt.strftime("%d %b %Y") + " " 
+            + df_clean["Start Time"] + " " 
+            + df_clean["Class Type"]
+        )
+        return classes
+    df_clean = df_clean.loc[
+        lambda df_: ~(_make_class_identifier(df_).isin(classes_to_exclude))
+    ]
     return df_clean
 
 
