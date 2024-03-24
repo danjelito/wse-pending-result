@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import module
 
 
-today = "2024-03-18"  # note: used to get the folder containing pending result
+today = "2024-03-24"  # note: used to get the folder containing pending result
 month = "2024-02"  # note: used to retrieve sheet from coco trainer data
 load_dotenv()  # load secret variable
 # et to be exlcuded from the summary because already resigned
