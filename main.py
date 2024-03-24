@@ -1,10 +1,10 @@
 import test
-from collections import namedtuple
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 import module
+
 
 today = "2024-03-18"  # note: used to get the folder containing pending result
 month = "2024-02"  # note: used to retrieve sheet from coco trainer data

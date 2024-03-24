@@ -4,7 +4,7 @@
 - Pending results from Core Course, both from offline and online centers. There are four files exported.
 
 ## External Dependencies
-1. File `Trainer Working Days (Sync with Local).xlsx`, located on Devan's Google Drive. This is used to get each teacher's center. Download the file from Google Drive and place it into your local folder.
+1. File `Trainer Working Days (Sync with Local).xlsx`, located on Devan's Google Drive. This is used to get each teacher's center. Update it on a monthly basis. Download the file from Google Drive and place it into your local folder.
 
 ## How to Use
 - Download the pending result report from Core Course.
